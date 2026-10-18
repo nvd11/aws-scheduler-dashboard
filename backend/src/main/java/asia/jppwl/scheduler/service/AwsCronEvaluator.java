@@ -214,16 +214,29 @@ public class AwsCronEvaluator {
 
         ParsedCron cron = ParsedCron.parse(trimmed);
         ZonedDateTime cursor = ZonedDateTime.ofInstant(beforeOrAt, zoneId).truncatedTo(ChronoUnit.MINUTES);
-        int maxIterations = 60 * 24 * 40; // look back up to 40 days
+        int maxIterations = 2000;
         for (int i = 0; i < maxIterations; i++) {
-            if (cron.years.get(cursor.getYear())
-                    && cron.months.get(cursor.getMonthValue())
-                    && cron.matchesDay(cursor)
-                    && cron.hours.get(cursor.getHour())
-                    && cron.minutes.get(cursor.getMinute())) {
-                return cursor.toInstant();
+            if (!cron.years.get(cursor.getYear())) {
+                cursor = cursor.minusYears(1).withMonth(12).withDayOfMonth(31).withHour(23).withMinute(59);
+                continue;
             }
-            cursor = cursor.minusMinutes(1);
+            if (!cron.months.get(cursor.getMonthValue())) {
+                cursor = cursor.withDayOfMonth(1).withHour(0).withMinute(0).minusMinutes(1);
+                continue;
+            }
+            if (!cron.matchesDay(cursor)) {
+                cursor = cursor.withHour(0).withMinute(0).minusMinutes(1);
+                continue;
+            }
+            if (!cron.hours.get(cursor.getHour())) {
+                cursor = cursor.withMinute(0).minusMinutes(1);
+                continue;
+            }
+            if (!cron.minutes.get(cursor.getMinute())) {
+                cursor = cursor.minusMinutes(1);
+                continue;
+            }
+            return cursor.toInstant();
         }
         return null;
     }
