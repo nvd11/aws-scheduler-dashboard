@@ -108,6 +108,11 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>url-connection-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.amazonservices</groupId>
+            <artifactId>quarkus-amazon-common</artifactId>
+            <version>2.14.0</version>
+        </dependency>
 
         <!-- Testing: JUnit 5, Quarkus Mockito, RestAssured, AssertJ, JaCoCo -->
         <dependency>
