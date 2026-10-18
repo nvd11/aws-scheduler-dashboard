@@ -636,9 +636,27 @@ backend/
     │       └── application.properties              # Quarkus HTTP, Jackson, Caffeine, AWS URLConnection, Native flags
     └── test/
         └── java/asia/jppwl/scheduler/
+            ├── security/
+            │   └── ForwardAuthIdentityServiceTest.java # JUnit 5 tests for Kong X-Auth-Request-* & Logto fallback
             ├── service/
-            │   ├── AwsCronEvaluatorTest.java       # Unit tests for all 5 production cron/rate expressions & timezones
-            │   └── ExecutionCorrelatorTest.java    # Unit tests for Tier 1 (display_title) & Tier 2 (cron window) attribution
+            │   ├── AwsCronEvaluatorTest.java           # JUnit 5 tests for all 5 cron/rate expressions, TZ & errors
+            │   ├── AwsTopologyServiceTest.java         # JUnit 5 tests for 3-hop Scheduler->Rule->ApiDestination graph
+            │   ├── CloudWatchServiceTest.java          # JUnit 5 tests for 7d metric aggregation & daily buckets
+            │   ├── ExecutionCorrelatorTest.java        # JUnit 5 tests for Tier 1 (display_title) & Tier 2 (cron window)
+            │   └── JobControlServiceTest.java          # JUnit 5 tests for PutEvents, GitHub dispatch & UpdateSchedule
             └── resource/
-                └── SchedulerResourceTest.java      # @QuarkusTest REST endpoint contract tests with mocked AWS/GitHub
+                ├── AuthResourceTest.java               # @QuarkusTest for /auth/me & /auth/logout
+                ├── HealthResourceTest.java             # @QuarkusTest for /live, /ready & /v1/health
+                └── SchedulerResourceTest.java          # @QuarkusTest REST contract & GlobalExceptionMapper tests
 ```
+
+---
+
+## 6. JUnit 5 Testing & JaCoCo Coverage Gate (≥80% Mandatory)
+
+- **Test Stack**: `quarkus-junit5`, `quarkus-junit5-mockito` (`@InjectMock`), and `rest-assured`.
+- **Coverage Enforcement (`pom.xml`)**: Configured with `org.jacoco:jacoco-maven-plugin` (`0.8.11`) bound to the `verify` / `test` phase with a strict rule enforcing **`LINE` and `INSTRUCTION` covered ratio >= `0.80` (80%)**.
+- **Key Test Scenarios**:
+  1. `AwsCronEvaluatorTest`: Verifies `rate(10 minutes)`, `cron(50 23 * * ? *)`, `cron(0 9 ? * MON *)`, `cron(30 9 1 * ? *)`, `cron(0 4 ? * SUN *)`, invalid syntax rejection, and next-5 firing timestamps across `UTC` and `Asia/Shanghai`.
+  2. `AwsTopologyServiceTest` & `ExecutionCorrelatorTest`: Mocks AWS `SchedulerClient`, `EventBridgeClient`, and `GitHubActionsClient` to test 3-hop resolution, Tier-1 `display_title` exact matching, Tier-2 cron window (`±180s`) fallback, and bounded plain-text log streaming (`tailLines`).
+  3. `SchedulerResourceTest` & `AuthResourceTest`: End-to-end HTTP tests verifying all 13 REST endpoints, Forward-Auth header parsing (`X-Auth-Request-*`), and error code mapping (`40001`, `40100`, `40401`, `50201`).

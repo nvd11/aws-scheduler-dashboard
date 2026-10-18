@@ -2,7 +2,7 @@
 
 **Document Version:** 1.0.0  
 **Service Name:** `scheduler-frontend` (Directory: `web/`)  
-**Technology Stack:** React 18 + TypeScript 5 + Vite 5 + Tailwind CSS 3 + Lucide React + Axios  
+**Technology Stack:** React 18 + TypeScript 5 + Vite 5 + Tailwind CSS 3 + Lucide React + Axios + **Jest & React Testing Library (≥80% Coverage)**  
 **Serving Runtime:** `nginx:1.27-alpine` (`<15MB RAM` footprint)  
 **External URL:** `https://gw.jppwl.asia/scheduler/` (Cloudflare Same-Origin + Kong `oauth2-forward-auth` SSO)  
 **Backend API Base URL:** `/scheduler/api` (Same-Origin relative path)  
@@ -209,7 +209,31 @@ web/
 
 ---
 
-## 5. Production Container & Nginx Routing (`web/Dockerfile` & `web/nginx.conf`)
+## 5. Jest Unit & Component Testing Specification (≥80% Coverage Gate)
+
+- **Test Runner & Libraries**: **Jest 29** (`ts-jest` / `@swc/jest` + `jest-environment-jsdom`) + **React Testing Library (`@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`)**.
+- **Strict Coverage Threshold (`jest.config.ts`)**:
+  ```ts
+  coverageThreshold: {
+    global: {
+      lines: 80,
+      statements: 80,
+      functions: 80,
+      branches: 80,
+    },
+  }
+  ```
+- **Test Suite Breakdown (`web/src/__tests__/`)**:
+  1. `format.test.ts`: Tests duration formatting (`135s` ➔ `'2m 15s'`), relative time strings, and countdown formatting.
+  2. `apiAndServices.test.ts`: Tests Axios `401` SSO redirect interceptor (`/oauth2/start?rd=...`), `authService` (`/auth/me`, logout), and `schedulerService` REST methods.
+  3. `ScheduleCard.test.tsx` & `MetricSparkline.test.tsx`: Verifies schedule rendering, 3-hop topology badges, optimistic Enable/Pause toggle, and Run Now / History button callbacks.
+  4. `RunHistoryAndLogDrawer.test.tsx` & `TerminalLogViewer.test.tsx`: Verifies attributed run list selection, step status rendering, log line search filtering, tailLines switching, and clipboard copy.
+  5. `TriggerModal.test.tsx` & `CronEditModal.test.tsx`: Verifies `EVENTBRIDGE` vs. `GITHUB_DIRECT` input overrides and debounced `/v1/cron/preview` validation.
+  6. `App.test.tsx`: Full dashboard integration test covering `TopNavbar`, `KpiSummaryBanner`, category/state filtering, and drawer/modal workflows.
+
+---
+
+## 6. Production Container & Nginx Routing (`web/Dockerfile` & `web/nginx.conf`)
 
 Aligned 1:1 with `astra-frontend`:
 - **Build Stage**: Uses `FROM --platform=$BUILDPLATFORM node:22-alpine AS builder` to execute native architecture compilation (`npm ci && npm run build`).

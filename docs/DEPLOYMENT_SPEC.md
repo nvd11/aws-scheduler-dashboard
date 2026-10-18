@@ -18,9 +18,10 @@ Aligned 1:1 with `astra` (`astra-frontend` & `astra-backend`) and `higress-dashb
 flowchart LR
     subgraph Repo["1. Code Repository (nvd11/aws-scheduler-dashboard)"]
         Push["git push main"]
+        CI_Test["ci-test-coverage.yaml<br/>(JUnit 5 JaCoCo ≥80% & Jest ≥80%)"]
         GHA_FE["build-and-push-frontend.yaml<br/>(Node 22 ➔ nginx:1.27-alpine)"]
-        GHA_BE["build-and-push-backend.yaml<br/>(Mandrel 23.1 Java 21 Native)"]
-        Push --> GHA_FE & GHA_BE
+        GHA_BE["build-and-push-backend.yaml<br/>(Mandrel 23.1 ARM64 Native)"]
+        Push --> CI_Test --> GHA_FE & GHA_BE
     end
 
     subgraph GHCR["2. GitHub Container Registry"]
