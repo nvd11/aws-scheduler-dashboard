@@ -1,0 +1,52 @@
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "web/**"
+      - ".github/workflows/ci-frontend.yaml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "web/**"
+      - ".github/workflows/ci-frontend.yaml"
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    name: TypeScript Check, Jest Coverage (>=80%) & Vite Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Jest Tests & Enforce >=80% Coverage Gate
+        run: npm test -- --coverage --watchAll=false
+
+      - name: Verify Production TypeScript & Vite Bundle Build
+        run: npm run build
+
+      - name: Upload Frontend Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-jest-coverage-report
+          path: web/coverage/
+          retention-days: 14
