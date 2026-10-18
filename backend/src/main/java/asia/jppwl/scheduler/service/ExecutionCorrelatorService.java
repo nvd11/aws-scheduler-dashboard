@@ -16,10 +16,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -40,8 +43,12 @@ public class ExecutionCorrelatorService {
     private final GitHubActionsClient gitHubClient;
     private final AwsCronEvaluator cronEvaluator;
     private final Map<String, CachedWorkflowRuns> workflowRunsCache = new ConcurrentHashMap<>();
+    private final Map<String, CachedWindowRuns> scheduleWindowRunsCache = new ConcurrentHashMap<>();
 
     private record CachedWorkflowRuns(JsonNode runsNode, Instant expiresAt) {
+    }
+
+    private record CachedWindowRuns(List<ExecutionRecord> records, Instant expiresAt) {
     }
 
     @Inject
@@ -56,11 +63,13 @@ public class ExecutionCorrelatorService {
 
     public void evictAllRunCaches() {
         workflowRunsCache.clear();
+        scheduleWindowRunsCache.clear();
     }
 
     public void evictWorkflowCache(String owner, String repo, String workflowFile) {
         if (owner != null && repo != null && workflowFile != null) {
             workflowRunsCache.remove(cacheKey(owner, repo, workflowFile));
+            scheduleWindowRunsCache.clear();
         }
     }
 
@@ -88,17 +97,35 @@ public class ExecutionCorrelatorService {
 
         JsonNode runsRoot = fetchWorkflowRunsCached(owner, repo, workflowFile, forceRefresh);
         JsonNode runsArray = runsRoot != null ? runsRoot.get("workflow_runs") : null;
-        if (runsArray == null || !runsArray.isArray()) {
-            return new ScheduleRunsResponse(targetSchedule.name(), owner + "/" + repo, workflowFile, 0, List.of());
-        }
-
         int maxItems = Math.max(1, Math.min(limit <= 0 ? 20 : limit, 50));
         List<ExecutionRecord> attributed = new ArrayList<>();
+        Set<Long> seenRunIds = new HashSet<>();
 
-        for (JsonNode runNode : runsArray) {
-            AttributionMatch match = attributeRun(runNode, peerSchedules);
-            if (match != null && match.scheduleName().equals(targetSchedule.name())) {
-                attributed.add(toExecutionRecord(runNode, match.method()));
+        if (runsArray != null && runsArray.isArray()) {
+            for (JsonNode runNode : runsArray) {
+                AttributionMatch match = attributeRun(runNode, peerSchedules);
+                if (match != null && match.scheduleName().equals(targetSchedule.name())) {
+                    ExecutionRecord rec = toExecutionRecord(runNode, match.method());
+                    if (seenRunIds.add(rec.runId())) {
+                        attributed.add(rec);
+                    }
+                }
+            }
+        }
+
+        // When a low-frequency cron schedule shares a workflow with a high-frequency rate() schedule,
+        // older daily/weekly/monthly runs get pushed past page 1. Query historical firing windows directly.
+        boolean isCronSchedule = targetSchedule.scheduleExpression() != null
+                && targetSchedule.scheduleExpression().trim().toLowerCase(Locale.ROOT).startsWith("cron(");
+        if (peerSchedules.size() > 1 && isCronSchedule && attributed.size() < Math.min(maxItems, 5)) {
+            int windowsToLookBack = maxItems <= 1 ? 2 : 5;
+            List<ExecutionRecord> historical = fetchHistoricalCronWindowRuns(
+                    targetSchedule, peerSchedules, owner, repo, workflowFile, windowsToLookBack, forceRefresh
+            );
+            for (ExecutionRecord rec : historical) {
+                if (seenRunIds.add(rec.runId())) {
+                    attributed.add(rec);
+                }
             }
         }
 
@@ -352,6 +379,66 @@ public class ExecutionCorrelatorService {
         } catch (Exception e) {
             return 0L;
         }
+    }
+
+    private List<ExecutionRecord> fetchHistoricalCronWindowRuns(
+            ResolvedScheduleNode schedule,
+            List<ResolvedScheduleNode> peerSchedules,
+            String owner,
+            String repo,
+            String workflowFile,
+            int windowCount,
+            boolean forceRefresh) {
+        if (!gitHubClient.isConfigured()) {
+            return List.of();
+        }
+        String cacheKey = schedule.name() + ":" + windowCount;
+        Instant now = Instant.now();
+        CachedWindowRuns cached = scheduleWindowRunsCache.get(cacheKey);
+        if (!forceRefresh && cached != null && cached.expiresAt().isAfter(now)) {
+            return cached.records();
+        }
+
+        List<ExecutionRecord> found = new ArrayList<>();
+        Instant cursor = now;
+        for (int i = 0; i < windowCount; i++) {
+            Instant fireTime;
+            try {
+                fireTime = cronEvaluator.computePreviousFireTime(
+                        schedule.scheduleExpression(),
+                        schedule.timezone(),
+                        cursor
+                );
+            } catch (Exception e) {
+                break;
+            }
+            if (fireTime == null) {
+                break;
+            }
+            Instant winStart = fireTime.minusSeconds(WINDOW_EARLY_TOLERANCE_SECONDS).truncatedTo(ChronoUnit.SECONDS);
+            Instant winEnd = fireTime.plusSeconds(WINDOW_LATE_TOLERANCE_SECONDS).truncatedTo(ChronoUnit.SECONDS);
+            String rangeQuery = winStart.toString() + ".." + winEnd.toString();
+            try {
+                JsonNode root = gitHubClient.listWorkflowRunsInWindow(owner, repo, workflowFile, rangeQuery, 5);
+                JsonNode arr = root != null ? root.get("workflow_runs") : null;
+                if (arr != null && arr.isArray() && !arr.isEmpty()) {
+                    for (JsonNode runNode : arr) {
+                        AttributionMatch match = attributeRun(runNode, peerSchedules);
+                        if (match != null && match.scheduleName().equals(schedule.name())) {
+                            found.add(toExecutionRecord(runNode, match.method()));
+                        }
+                    }
+                    if (windowCount <= 2 && !found.isEmpty()) {
+                        break;
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+            cursor = fireTime.minusSeconds(60);
+        }
+
+        scheduleWindowRunsCache.put(cacheKey, new CachedWindowRuns(found, now.plusSeconds(120)));
+        return found;
     }
 
     private JsonNode fetchWorkflowRunsCached(String owner, String repo, String workflowFile, boolean forceRefresh) {

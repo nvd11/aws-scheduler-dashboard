@@ -70,6 +70,12 @@ public class GitHubActionsClient {
         return sendGetJson(path);
     }
 
+    public JsonNode listWorkflowRunsInWindow(String owner, String repo, String workflowFile, String createdRange, int perPage) {
+        String path = String.format("/repos/%s/%s/actions/workflows/%s/runs?created=%s&per_page=%d",
+                owner, repo, workflowFile, createdRange, perPage);
+        return sendGetJson(path);
+    }
+
     public JsonNode listRunJobs(String owner, String repo, long runId) {
         String path = String.format("/repos/%s/%s/actions/runs/%d/jobs?per_page=30", owner, repo, runId);
         return sendGetJson(path);
