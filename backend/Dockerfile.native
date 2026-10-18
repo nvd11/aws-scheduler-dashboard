@@ -12,8 +12,7 @@ RUN chmod +x mvnw && ./mvnw dependency:go-offline -B || true
 
 # 2. Copy source and compile native executable
 COPY src ./src
-RUN ./mvnw -B package -Dnative -DskipTests \
-    -Dquarkus.native.additional-build-args="-H:+ReportExceptionStackTraces,--enable-url-protocols=http,https"
+RUN ./mvnw -B package -Dnative -DskipTests
 
 # ==============================================================================
 # Stage 2: Minimal ARM64/Multi-Arch Runtime Image (debian:12-slim + CA certs + tzdata)
