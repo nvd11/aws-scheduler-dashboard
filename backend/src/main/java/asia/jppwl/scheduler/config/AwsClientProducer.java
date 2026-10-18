@@ -3,10 +3,14 @@ package asia.jppwl.scheduler.config;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
+import java.net.URI;
+import java.time.Duration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.http.urlconnection.ProxyConfiguration;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
@@ -32,13 +36,26 @@ public class AwsClientProducer {
         return DefaultCredentialsProvider.create();
     }
 
+    SdkHttpClient.Builder<?> buildHttpClientBuilder() {
+        UrlConnectionHttpClient.Builder builder = UrlConnectionHttpClient.builder()
+                .connectionTimeout(Duration.ofSeconds(8))
+                .socketTimeout(Duration.ofSeconds(15));
+        String proxyHost = appConfig.github().proxyHost().orElse("").trim();
+        if (!proxyHost.isEmpty()) {
+            builder.proxyConfiguration(ProxyConfiguration.builder()
+                    .endpoint(URI.create("http://" + proxyHost + ":" + appConfig.github().proxyPort()))
+                    .build());
+        }
+        return builder;
+    }
+
     @Produces
     @ApplicationScoped
     public SchedulerClient produceSchedulerClient() {
         return SchedulerClient.builder()
                 .region(Region.of(appConfig.aws().region()))
                 .credentialsProvider(resolveCredentialsProvider())
-                .httpClientBuilder(UrlConnectionHttpClient.builder())
+                .httpClientBuilder(buildHttpClientBuilder())
                 .build();
     }
 
@@ -48,7 +65,7 @@ public class AwsClientProducer {
         return EventBridgeClient.builder()
                 .region(Region.of(appConfig.aws().region()))
                 .credentialsProvider(resolveCredentialsProvider())
-                .httpClientBuilder(UrlConnectionHttpClient.builder())
+                .httpClientBuilder(buildHttpClientBuilder())
                 .build();
     }
 
@@ -58,7 +75,7 @@ public class AwsClientProducer {
         return CloudWatchClient.builder()
                 .region(Region.of(appConfig.aws().region()))
                 .credentialsProvider(resolveCredentialsProvider())
-                .httpClientBuilder(UrlConnectionHttpClient.builder())
+                .httpClientBuilder(buildHttpClientBuilder())
                 .build();
     }
 }

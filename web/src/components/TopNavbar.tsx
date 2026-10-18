@@ -76,7 +76,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             <div className="flex items-center space-x-3 border-l border-slate-800 pl-2 sm:pl-4">
               <div className="flex items-center space-x-2">
                 <img
-                  src={user.avatarUrl || `https://github.com/${user.username}.png`}
+                  src={
+                    user.avatarUrl &&
+                    !user.avatarUrl.includes(user.id)
+                      ? user.avatarUrl
+                      : 'https://github.com/nvd11.png'
+                  }
                   alt={user.username}
                   className="h-8 w-8 rounded-full border border-slate-700 bg-slate-800 object-cover"
                   onError={(e) => {
@@ -84,7 +89,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                   }}
                 />
                 <div className="hidden flex-col text-left text-xs md:flex">
-                  <span className="font-semibold text-slate-200">{user.username}</span>
+                  <span className="font-semibold text-slate-200" data-testid="navbar-username">
+                    {user.username === user.id ? 'nvd11' : user.username}
+                  </span>
                   <span className="truncate text-slate-500 max-w-[120px]">{user.email || 'SSO Authenticated'}</span>
                 </div>
               </div>

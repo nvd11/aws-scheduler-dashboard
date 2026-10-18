@@ -4,7 +4,7 @@ export const API_BASE_URL = '/scheduler/api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 60000,
   withCredentials: true,
 });
 

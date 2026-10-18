@@ -109,6 +109,8 @@ class ServicesUnitTest {
                 return new GitHubConfig() {
                     @Override public Optional<String> token() { return Optional.of("ghp_valid_token"); }
                     @Override public String apiBaseUrl() { return "https://api.github.com"; }
+                    @Override public Optional<String> proxyHost() { return Optional.of("10.0.1.227"); }
+                    @Override public int proxyPort() { return 7890; }
                 };
             }
             @Override public CacheConfig cache() {

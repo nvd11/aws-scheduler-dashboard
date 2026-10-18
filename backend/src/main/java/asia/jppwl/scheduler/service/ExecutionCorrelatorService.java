@@ -272,6 +272,14 @@ public class ExecutionCorrelatorService {
                 long bestFrequentDelta = Long.MAX_VALUE;
 
                 for (ResolvedScheduleNode candidate : peerSchedules) {
+                    boolean isHighFrequency = candidate.scheduleExpression().toLowerCase(Locale.ROOT).startsWith("rate(");
+                    if (isHighFrequency) {
+                        if (bestRateOrFrequentMatch == null) {
+                            bestRateOrFrequentMatch = candidate;
+                            bestFrequentDelta = 0L;
+                        }
+                        continue;
+                    }
                     Instant fireTime = cronEvaluator.computePreviousFireTime(
                             candidate.scheduleExpression(),
                             candidate.timezone(),
@@ -283,17 +291,9 @@ public class ExecutionCorrelatorService {
                     long deltaSeconds = Duration.between(fireTime, runCreated).getSeconds();
                     if (deltaSeconds >= -WINDOW_EARLY_TOLERANCE_SECONDS && deltaSeconds <= WINDOW_LATE_TOLERANCE_SECONDS) {
                         long absDelta = Math.abs(deltaSeconds);
-                        boolean isHighFrequency = candidate.scheduleExpression().toLowerCase(Locale.ROOT).startsWith("rate(");
-                        if (!isHighFrequency) {
-                            if (absDelta < bestSpecificDelta) {
-                                bestSpecificDelta = absDelta;
-                                bestSpecificCronMatch = candidate;
-                            }
-                        } else {
-                            if (absDelta < bestFrequentDelta) {
-                                bestFrequentDelta = absDelta;
-                                bestRateOrFrequentMatch = candidate;
-                            }
+                        if (absDelta < bestSpecificDelta) {
+                            bestSpecificDelta = absDelta;
+                            bestSpecificCronMatch = candidate;
                         }
                     }
                 }

@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatch.model.Dimension;
 import software.amazon.awssdk.services.cloudwatch.model.GetMetricDataRequest;
@@ -25,10 +26,18 @@ import software.amazon.awssdk.services.cloudwatch.model.MetricStat;
 public class CloudWatchService {
 
     private final CloudWatchClient cloudWatchClient;
+    private final Map<String, CachedMetrics> metricsCache = new ConcurrentHashMap<>();
+
+    private record CachedMetrics(Metrics7dView view, Instant expiresAt) {
+    }
 
     @Inject
     public CloudWatchService(CloudWatchClient cloudWatchClient) {
         this.cloudWatchClient = cloudWatchClient;
+    }
+
+    public void evictCache() {
+        metricsCache.clear();
     }
 
     public Metrics7dView fetchRuleMetrics7d(String ruleName) {
@@ -40,6 +49,12 @@ public class CloudWatchService {
 
         if (ruleName == null || ruleName.isBlank()) {
             return emptyMetrics(last7Days);
+        }
+
+        Instant now = Instant.now();
+        CachedMetrics cached = metricsCache.get(ruleName);
+        if (cached != null && cached.expiresAt().isAfter(now)) {
+            return cached.view();
         }
 
         try {
@@ -116,7 +131,9 @@ public class CloudWatchService {
                 buckets.add(new DailyMetricBucket(d.toString(), inv, fail));
             }
             long totalSuccess = Math.max(0L, totalInv - totalFail);
-            return new Metrics7dView(totalInv, totalSuccess, totalFail, buckets);
+            Metrics7dView result = new Metrics7dView(totalInv, totalSuccess, totalFail, buckets);
+            metricsCache.put(ruleName, new CachedMetrics(result, now.plusSeconds(60)));
+            return result;
         } catch (Exception e) {
             return emptyMetrics(last7Days);
         }

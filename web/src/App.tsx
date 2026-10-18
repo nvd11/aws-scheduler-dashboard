@@ -51,10 +51,11 @@ export const App: React.FC = () => {
       const data = await schedulerService.listSchedules(forceRefresh);
       setSummary(data.summary);
       setSchedules(data.items || []);
+      setIsLoading(false);
     } catch {
       showToast('Failed to load schedules from backend API');
-    } finally {
       setIsLoading(false);
+    } finally {
       setIsRefreshing(false);
     }
   }, []);

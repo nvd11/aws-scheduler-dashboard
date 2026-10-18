@@ -9,6 +9,8 @@ import jakarta.inject.Inject;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -43,10 +45,14 @@ public class GitHubActionsClient {
     public GitHubActionsClient(AppConfig appConfig, ObjectMapper objectMapper) {
         this.appConfig = appConfig;
         this.objectMapper = objectMapper;
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .followRedirects(HttpClient.Redirect.ALWAYS)
-                .build();
+        HttpClient.Builder builder = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(8))
+                .followRedirects(HttpClient.Redirect.ALWAYS);
+        String proxyHost = appConfig.github().proxyHost().orElse("").trim();
+        if (!proxyHost.isEmpty()) {
+            builder.proxy(ProxySelector.of(new InetSocketAddress(proxyHost, appConfig.github().proxyPort())));
+        }
+        this.httpClient = builder.build();
     }
 
     public void setHttpClientForTesting(HttpClient customClient) {

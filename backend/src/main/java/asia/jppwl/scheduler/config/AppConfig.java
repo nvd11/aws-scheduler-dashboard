@@ -52,6 +52,11 @@ public interface AppConfig {
 
         @WithDefault("https://api.github.com")
         String apiBaseUrl();
+
+        Optional<String> proxyHost();
+
+        @WithDefault("7890")
+        int proxyPort();
     }
 
     interface CacheConfig {

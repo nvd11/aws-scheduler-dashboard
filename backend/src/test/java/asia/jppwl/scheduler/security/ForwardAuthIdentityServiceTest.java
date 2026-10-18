@@ -45,6 +45,8 @@ class ForwardAuthIdentityServiceTest {
                 return new GitHubConfig() {
                     @Override public Optional<String> token() { return Optional.of("ghp_test123"); }
                     @Override public String apiBaseUrl() { return "https://api.github.com"; }
+                    @Override public Optional<String> proxyHost() { return Optional.empty(); }
+                    @Override public int proxyPort() { return 7890; }
                 };
             }
             @Override public CacheConfig cache() {

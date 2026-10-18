@@ -118,6 +118,7 @@ public class SchedulerResource {
         identityService.resolveCurrentUser(headers);
         if (refresh) {
             topologyService.evictCache();
+            cloudWatchService.evictCache();
             correlatorService.evictAllRunCaches();
         }
 
