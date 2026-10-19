@@ -148,7 +148,8 @@ Aligned with `higress-dashboard-backend` and `dbgate`, **zero plaintext credenti
 | **`scheduler-aws-secret-access-key`** | `AWS_SECRET_ACCESS_KEY` | IAM User `moon-cli` Secret Access Key |
 | **`scheduler-github-token`** | `GITHUB_TOKEN` | GitHub PAT (`nvd11`) with `repo` and `workflow` scopes |
 
-*(Note: If the target namespace is `higress-system` or `default`, it reuses the existing `SecretStore` `oci-litellm-vault-store` or `oci-vault-store` directly.)*
+### 3.2 LAN Outbound Proxy Configuration on `radxa-cubie-a7a`
+Because `radxa-cubie-a7a` resides on the home LAN behind the Starfive gigabit Mihomo gateway (`10.0.1.227:7890`), `scheduler-backend` configures `OUTBOUND_PROXY_HOST=10.0.1.227` and `OUTBOUND_PROXY_PORT=7890` in its `ConfigMap`, routing outbound AWS SDK (`ap-southeast-1`) and GitHub API (`api.github.com`) requests through the low-latency LAN proxy.
 
 ---
 
