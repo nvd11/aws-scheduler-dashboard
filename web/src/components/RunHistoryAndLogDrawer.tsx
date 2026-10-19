@@ -106,7 +106,7 @@ export const RunHistoryAndLogDrawer: React.FC<RunHistoryAndLogDrawerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm" data-testid="history-drawer">
-      <div className="flex h-full w-full max-w-5xl flex-col border-l border-slate-800 bg-slate-950 shadow-2xl">
+      <div className="flex h-full w-full max-w-6xl flex-col border-l border-slate-800 bg-slate-950 shadow-2xl">
         {/* Drawer Header */}
         <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
           <div>
@@ -147,10 +147,10 @@ export const RunHistoryAndLogDrawer: React.FC<RunHistoryAndLogDrawerProps> = ({
         )}
 
         {/* Drawer Split Content */}
-        <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto p-6 lg:grid-cols-12">
+        <div className="grid flex-1 min-h-0 grid-cols-1 gap-4 overflow-hidden p-6 lg:grid-cols-12">
           {/* Left Column: Attributed Runs List */}
-          <div className="flex flex-col gap-2 lg:col-span-5">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <div className="flex min-h-0 flex-col gap-2 lg:col-span-5">
+            <h3 className="shrink-0 text-xs font-semibold uppercase tracking-wider text-slate-400">
               Attributed Workflow Runs ({runs.length})
             </h3>
             {isLoadingRuns ? (
@@ -162,7 +162,7 @@ export const RunHistoryAndLogDrawer: React.FC<RunHistoryAndLogDrawerProps> = ({
                 No attributed runs found for this schedule.
               </div>
             ) : (
-              <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+              <div className="flex-1 min-h-0 space-y-2 overflow-y-auto pr-1">
                 {runs.map((run) => {
                   const isSelected = run.runId === selectedRunId;
                   return (
@@ -220,9 +220,9 @@ export const RunHistoryAndLogDrawer: React.FC<RunHistoryAndLogDrawerProps> = ({
           </div>
 
           {/* Right Column: Steps Breakdown & Console Log Viewer */}
-          <div className="flex flex-col gap-4 lg:col-span-7">
+          <div className="flex min-h-0 flex-col gap-4 lg:col-span-7">
             {logDetail && logDetail.steps && logDetail.steps.length > 0 && (
-              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+              <div className="shrink-0 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
                 <div className="mb-2 flex items-center justify-between text-xs">
                   <span className="font-semibold text-slate-200">
                     Job: {logDetail.jobName} (#{logDetail.jobId})

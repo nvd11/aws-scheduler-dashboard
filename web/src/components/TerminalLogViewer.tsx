@@ -72,9 +72,9 @@ export const TerminalLogViewer: React.FC<TerminalLogViewerProps> = ({
   };
 
   return (
-    <div className="flex flex-col rounded-xl border border-slate-800 bg-slate-950 overflow-hidden">
+    <div className="flex flex-1 min-h-0 flex-col rounded-xl border border-slate-800 bg-slate-950 overflow-hidden">
       {/* Terminal Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900/90 px-3 py-2">
+      <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900/90 px-3 py-2">
         <div className="flex items-center gap-2 text-xs text-slate-300">
           <Terminal className="h-4 w-4 text-sky-400" />
           <span className="font-mono font-semibold">Console Output</span>
@@ -131,7 +131,7 @@ export const TerminalLogViewer: React.FC<TerminalLogViewerProps> = ({
       <div
         ref={containerRef}
         data-testid="terminal-log-body"
-        className="max-h-[420px] min-h-[240px] overflow-y-auto p-3 font-mono text-xs leading-relaxed"
+        className="flex-1 min-h-[240px] overflow-y-auto p-3 font-mono text-xs leading-relaxed"
       >
         {isLoading ? (
           <div className="flex h-40 items-center justify-center text-slate-400">
