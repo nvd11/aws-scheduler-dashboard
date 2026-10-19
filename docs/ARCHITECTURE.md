@@ -255,7 +255,7 @@ In AWS Account `186004631963`, schedules do not invoke GitHub directly; they fol
 3. Matching each `Schedule`'s `(Source, DetailType)` tuple against the indexed `EventPattern` criteria to bind the complete pipeline metadata.
 
 ### 5.3 Multi-Schedule Run Attribution Algorithm (`ExecutionCorrelatorService`)
-Because 4 separate Flink schedules (`test-sms-flink-cron`, `sms-flink-report-daily`, `sms-flink-report-weekly`, `sms-flink-report-monthly`) all trigger the same workflow file (`nvd11/sms-flink-etl` ➔ `trigger-nuc-batch-runner.yml`), GitHub's `/runs` endpoint returns an interleaved list of runs. `ExecutionCorrelatorService` disambiguates them using a **Dual-Layer Attribution Algorithm**:
+Because 4 separate Flink schedules (`sms-flink-ingest-10m`, `sms-flink-report-daily`, `sms-flink-report-weekly`, `sms-flink-report-monthly`) all trigger the same workflow file (`nvd11/sms-flink-etl` ➔ `trigger-nuc-batch-runner.yml`), GitHub's `/runs` endpoint returns an interleaved list of runs. `ExecutionCorrelatorService` disambiguates them using a **Dual-Layer Attribution Algorithm**:
 
 1. **Layer 1: Exact `run-name` (`display_title`) Matching (Primary — 100% Accuracy)**:
    - In `trigger-nuc-batch-runner.yml`, the workflow header defines:

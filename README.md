@@ -77,7 +77,7 @@ flowchart LR
   - **AWS APIs (`scheduler:*`, `events:*`, `cloudwatch:*`)** provide the schedule inventory, 3-hop routing rules, manual `PutEvents` triggers, and 7-day aggregate invocation telemetry (`InvocationAttemptCount`, `FailedInvocations`).
   - **GitHub Actions REST API (`/actions/workflows/{workflow_id}/runs` & `/actions/jobs/{job_id}/logs`)** provides the actual execution history, step-by-step status breakdown, and plain-text console log streams for the built-in Terminal Log Viewer (since AWS EventBridge Scheduler is a stateless fire-and-forget trigger).
 - **Dual-Layer Multi-Schedule Disambiguation**:
-  - When multiple schedules (`test-sms-flink-cron`, `daily`, `weekly`, `monthly`) share a single workflow file (`trigger-nuc-batch-runner.yml`), the backend correlates runs using:
+  - When multiple schedules (`sms-flink-ingest-10m`, `daily`, `weekly`, `monthly`) share a single workflow file (`trigger-nuc-batch-runner.yml`), the backend correlates runs using:
     1. **Layer 1 (Exact `run-name` / `display_title` Match)**: Matches workflow `display_title` tags (e.g., `Batch ETL [report - DAILY]`) against each schedule's injected `inputs`—100% accurate even for manual `Run Now` triggers.
     2. **Layer 2 (Cron Firing Window Fallback)**: Aligns legacy run `created_at` timestamps with each schedule's computed cron firing window (`±180s`).
 
@@ -100,7 +100,7 @@ The dashboard is designed out-of-the-box to govern and monitor the following act
 
 | Schedule Name | Schedule Expression | Timezone | Event Source / Detail-Type | Downstream Target Workflow & Inputs |
 | :--- | :--- | :---: | :--- | :--- |
-| **`test-sms-flink-cron`** | `rate(10 minutes)` | `UTC` | `finance.sms-flink`<br>`minutely-tick` | `nvd11/sms-flink-etl`<br>`trigger-nuc-batch-runner.yml` *(ODS+DWD Incremental Ingest)* |
+| **`sms-flink-ingest-10m`** | `rate(10 minutes)` | `UTC` | `finance.sms-flink`<br>`minutely-tick` | `nvd11/sms-flink-etl`<br>`trigger-nuc-batch-runner.yml` *(ODS+DWD Incremental Ingest)* |
 | **`sms-flink-report-daily`** | `cron(50 23 * * ? *)` | `Asia/Shanghai` | `finance.sms-flink-report`<br>`daily-report` | `nvd11/sms-flink-etl`<br>`trigger-nuc-batch-runner.yml` (`report_period=DAILY`) |
 | **`sms-flink-report-weekly`** | `cron(0 9 ? * MON *)` | `Asia/Shanghai` | `finance.sms-flink-report`<br>`weekly-report` | `nvd11/sms-flink-etl`<br>`trigger-nuc-batch-runner.yml` (`report_period=WEEKLY`) |
 | **`sms-flink-report-monthly`** | `cron(30 9 1 * ? *)` | `Asia/Shanghai` | `finance.sms-flink-report`<br>`monthly-report` | `nvd11/sms-flink-etl`<br>`trigger-nuc-batch-runner.yml` (`report_period=MONTHLY`) |

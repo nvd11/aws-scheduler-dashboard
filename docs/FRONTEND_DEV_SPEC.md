@@ -81,7 +81,7 @@ export default defineConfig({
 |  Tabs: [All (5)] [Finance Flink ETL (4)] [Infra & TLS (1)]   State: [ALL▾]   [🔍 Search jobs...] |
 +--------------------------------------------------------------------------------------------------+
 |  +---------------------------------------------+  +-------------------------------------------+  |
-|  | [● ENABLED] sms-flink-report-daily   [Toggle]|  | [● ENABLED] test-sms-flink-cron  [Toggle] |  |
+|  | [● ENABLED] sms-flink-report-daily   [Toggle]|  | [● ENABLED] sms-flink-ingest-10m  [Toggle] |  |
 |  | cron(50 23 * * ? *) · Asia/Shanghai      [✏️]|  | rate(10 minutes) · UTC                [✏️]|  |
 |  | "Every day at 23:50" · Next in 07h 19m 12s  |  | "Every 10 minutes" · Next in 03m 42s      |  |
 |  | ------------------------------------------- |  | ----------------------------------------- |  |

@@ -313,7 +313,7 @@ Queries the downstream GitHub Actions workflow runs and filters/attributes them 
   2. Call GitHub REST API: `GET /repos/{owner}/{repo}/actions/workflows/{workflowFile}/runs?per_page=50`.
   3. If only 1 schedule in the inventory targets `{owner}/{repo}/{workflowFile}` (e.g., `jppwl-tls-cert-renew-weekly` ➔ `renew-jppwl-tls.yml`), attribute all runs directly (`attributionMethod: "SINGLE_OWNER"`).
   4. If multiple schedules share `{workflowFile}` (e.g., `trigger-nuc-batch-runner.yml` shared by 4 Flink schedules):
-     - **Tier 1 (`DISPLAY_TITLE`)**: Check `run.display_title`. Match tokens against `routing.defaultInputs` (`DAILY` ➔ `sms-flink-report-daily`, `WEEKLY` ➔ `sms-flink-report-weekly`, `MONTHLY` ➔ `sms-flink-report-monthly`, `ingest` / `INCREMENTAL` ➔ `test-sms-flink-cron`).
+     - **Tier 1 (`DISPLAY_TITLE`)**: Check `run.display_title`. Match tokens against `routing.defaultInputs` (`DAILY` ➔ `sms-flink-report-daily`, `WEEKLY` ➔ `sms-flink-report-weekly`, `MONTHLY` ➔ `sms-flink-report-monthly`, `ingest` / `INCREMENTAL` ➔ `sms-flink-ingest-10m`).
      - **Tier 2 (`CRON_WINDOW`)**: If `display_title` does not contain disambiguating tokens, compute the most recent firing timestamp before `run.created_at` for each of the 4 schedules using `AwsCronEvaluator`. Assign the run to the schedule whose fire time satisfies `0 <= (run.created_at - fireTime) <= 180s` with minimum delta.
 - **Response (`200 OK`)**:
 ```json

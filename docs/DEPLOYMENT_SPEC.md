@@ -418,7 +418,7 @@ name: Trigger NUC Batch Runner
 run-name: "Batch ETL [${{ inputs.pipeline_stage || 'all' }} | ${{ inputs.report_period || 'INCREMENTAL' }} | ${{ inputs.target_env || 'finance' }}]"
 ```
 
-- When `test-sms-flink-cron` fires (`pipeline_stage=all`), `display_title` becomes: `Batch ETL [all | DAILY | finance]`.
+- When `sms-flink-ingest-10m` fires (`pipeline_stage=all`), `display_title` becomes: `Batch ETL [all | DAILY | finance]`.
 - When `sms-flink-report-daily` fires (`pipeline_stage=report`, `report_period=DAILY`), `display_title` becomes: `Batch ETL [report | DAILY | finance]`.
 - When `sms-flink-report-weekly` fires (`pipeline_stage=report`, `report_period=WEEKLY`), `display_title` becomes: `Batch ETL [report | WEEKLY | finance]`.
 - When `sms-flink-report-monthly` fires (`pipeline_stage=report`, `report_period=MONTHLY`), `display_title` becomes: `Batch ETL [report | MONTHLY | finance]`.
